@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>March Madness 2026 — KenPom Bracket</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  :root {
+    --bg: #ffffff;
+    --surface: #f3f4f6;
+    --surface2: #e5e7eb;
+    --border: #d1d5db;
+    --text: #111827;
+    --text-dim: #6b7280;
+    --accent: #ea580c;
+    --accent-glow: rgba(234, 88, 12, 0.12);
+    --win: #16a34a;
+    --win-bg: rgba(22, 163, 74, 0.08);
+    --lose-text: #9ca3af;
+    --seed-bg: #e5e7eb;
+    --r64: #2563eb;
+    --r32: #7c3aed;
+    --s16: #db2777;
+    --e8: #ea580c;
+    --ff: #ca8a04;
+    --champ: #16a34a;
+    --correct: #16a34a;
+    --correct-bg: rgba(22, 163, 74, 0.07);
+    --wrong: #dc2626;
+    --wrong-bg: rgba(220, 38, 38, 0.06);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: auto;
+  }
+
+  /* ── Header ── */
+  header {
+    text-align: center;
+    padding: 1.25rem 1rem 0.75rem;
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .mm-logo {
+    height: 60px;
+    object-fit: contain;
+  }
+
+  .mm-logo-bottom {
+    height: 180px;
+    object-fit: contain;
+    margin-top: 0.75rem;
+  }
+
+  header .subtitle {
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    font-weight: 500;
+  }
+
+  /* ── Dashboard ── */
+  .dashboard {
+    padding: 1rem 1.5rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  .dash-top {
+    display: flex;
+    gap: 0.75rem;
+    align-items: stretch;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .stat-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.65rem 1rem;
+    text-align: center;
+    min-width: 100px;
+    flex: 1;
+    max-width: 160px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .stat-card .stat-icon { font-size: 1.1rem; }
+  .stat-card .stat-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+  .stat-card .stat-label {
+    font-size: 0.55rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+  }
+  .stat-card .stat-sub {
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: var(--text-dim);
+  }
+
+  .stat-card.correct-card .stat-value { color: var(--correct); }
+  .stat-card.wrong-card .stat-value { color: var(--wrong); }
+  .stat-card.points-card .stat-value { color: var(--accent); }
+
+  .accuracy-card {
+    position: relative;
+    min-width: 110px;
+  }
+  .accuracy-ring {
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: conic-gradient(var(--correct) 0deg, var(--correct) 0deg, var(--surface2) 0deg);
+    margin: 0 auto;
+  }
+  .accuracy-ring-inner {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text);
+  }
+
+  /* ── Round Progress ── */
+  .round-progress {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
+  }
+  .rp-segment {
+    flex: 1;
+    max-width: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .rp-label {
+    font-size: 0.5rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+  }
+  .rp-bar {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: var(--surface2);
+    overflow: hidden;
+    display: flex;
+  }
+  .rp-fill-correct {
+    height: 100%;
+    background: var(--correct);
+    transition: width 0.3s;
+  }
+  .rp-fill-wrong {
+    height: 100%;
+    background: var(--wrong);
+    transition: width 0.3s;
+  }
+  .rp-count {
+    font-size: 0.5rem;
+    font-weight: 600;
+    color: var(--text-dim);
+  }
+
+  /* ── Bottom row: Upset Tracker + Chalk Compare ── */
+  .dash-bottom {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .dash-panel {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.6rem 0.9rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    flex: 1;
+    min-width: 260px;
+    max-width: 420px;
+  }
+  .dash-panel-title {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .upset-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 0;
+    font-size: 0.7rem;
+    font-weight: 600;
+    border-bottom: 1px solid var(--surface);
+  }
+  .upset-row:last-child { border-bottom: none; }
+  .upset-status {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .upset-status.pending { background: var(--surface2); color: var(--text-dim); }
+  .upset-status.hit { background: rgba(22,163,74,0.15); color: var(--correct); }
+  .upset-status.miss { background: rgba(220,38,38,0.1); color: var(--wrong); }
+
+  .chalk-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .chalk-col {
+    text-align: center;
+    padding: 0.4rem;
+    border-radius: 8px;
+    background: var(--surface);
+  }
+  .chalk-col .chalk-value {
+    font-size: 1.2rem;
+    font-weight: 800;
+  }
+  .chalk-col .chalk-label {
+    font-size: 0.5rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+  .chalk-col.agent .chalk-value { color: var(--accent); }
+  .chalk-col.chalk .chalk-value { color: var(--text-dim); }
+  .chalk-diff {
+    text-align: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+  .chalk-diff.ahead { color: var(--correct); }
+  .chalk-diff.behind { color: var(--wrong); }
+  .chalk-diff.tied { color: var(--text-dim); }
+
+  .reset-btn {
+    display: block;
+    margin: 0 auto;
+    padding: 4px 14px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-dim);
+    font-size: 0.6rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .reset-btn:hover { border-color: var(--wrong); color: var(--wrong); }
+
+  /* ── Champion Banner ── */
+  .champion-banner {
+    text-align: center;
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(234,88,12,0.05), rgba(22,163,74,0.05));
+    border-bottom: 1px solid var(--border);
+  }
+
+  .champion-banner .trophy { font-size: 2rem; }
+
+  .champion-banner .champ-name {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--win);
+    margin: 0.2rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .champ-logo { width: 32px; height: 32px; }
+
+  .champion-banner .champ-detail {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+
+  /* ── Bracket Container — horizontal like NCAA.com ── */
+  .bracket-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    padding: 1rem 0.5rem;
+    gap: 0;
+    min-height: 600px;
+  }
+
+  .bracket-half {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    gap: 1.5rem;
+  }
+
+  /* ── Region ── */
+  .region {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .region-header {
+    text-align: center;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+  }
+
+  .rounds {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .bracket-half.right .rounds { flex-direction: row-reverse; }
+
+  .round {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    flex: 1;
+    min-width: 185px;
+    padding: 0 3px;
+  }
+
+  .round-label {
+    text-align: center;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    padding-bottom: 0.35rem;
+    margin-bottom: 0.35rem;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .round-label.r64 { border-color: var(--r64); color: var(--r64); }
+  .round-label.r32 { border-color: var(--r32); color: var(--r32); }
+  .round-label.s16 { border-color: var(--s16); color: var(--s16); }
+  .round-label.e8  { border-color: var(--e8);  color: var(--e8); }
+
+  /* ── Game Card ── */
+  .game {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    margin: 2px 0;
+    overflow: hidden;
+    font-size: 0.72rem;
+    transition: transform 0.15s, border-color 0.15s, background 0.2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  .game:hover {
+    transform: scale(1.03);
+    border-color: var(--accent);
+    z-index: 10;
+  }
+
+  .game.scored-correct {
+    border-color: var(--correct);
+    background: var(--correct-bg);
+  }
+
+  .game.scored-wrong {
+    border-color: var(--wrong);
+    background: var(--wrong-bg);
+  }
+
+  .game-team {
+    display: flex;
+    align-items: center;
+    padding: 3px 5px;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+
+  .game-team:last-child { border-bottom: none; }
+
+  .game-team.winner {
+    background: var(--win-bg);
+  }
+
+  .game-team.winner .team-name {
+    font-weight: 700;
+    color: var(--win);
+  }
+
+  .game-team.loser .team-name {
+    color: var(--lose-text);
+  }
+
+  .game-team.loser .seed {
+    opacity: 0.4;
+  }
+
+  .seed {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: var(--seed-bg);
+    border-radius: 3px;
+    font-weight: 700;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+
+  .game-team.winner .seed {
+    background: rgba(22,163,74,0.12);
+    color: var(--win);
+  }
+
+  .team-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .team-logo {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    flex-shrink: 0;
+    border-radius: 2px;
+  }
+
+  .ff-team .team-logo {
+    width: 22px;
+    height: 22px;
+  }
+
+  .win-prob {
+    font-size: 0.55rem;
+    font-weight: 700;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .game-team.loser .win-prob { display: none; }
+
+  /* ── Score Input ── */
+  .score-input {
+    width: 30px;
+    height: 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-align: center;
+    flex-shrink: 0;
+    outline: none;
+    transition: border-color 0.15s;
+    -moz-appearance: textfield;
+  }
+
+  .score-input::-webkit-inner-spin-button,
+  .score-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .score-input:focus { border-color: var(--accent); }
+  .score-input.has-value { border-color: var(--text-dim); }
+
+  .ff-team .score-input {
+    width: 40px;
+    height: 26px;
+    font-size: 0.75rem;
+  }
+
+  /* ── Final Four Center Column ── */
+  .final-four-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 280px;
+    max-width: 320px;
+    padding: 0 0.5rem;
+    gap: 0.75rem;
+  }
+
+  .ff-logo {
+    height: 240px;
+    object-fit: contain;
+  }
+
+  .ff-dates {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .ff-games {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+  }
+
+  .ff-game {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    transition: border-color 0.2s, background 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  .ff-game.championship {
+    border-color: var(--champ);
+    box-shadow: 0 2px 8px rgba(22,163,74,0.1);
+  }
+
+  .ff-game.scored-correct { border-color: var(--correct); background: var(--correct-bg); }
+  .ff-game.scored-wrong { border-color: var(--wrong); background: var(--wrong-bg); }
+
+  .ff-game-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+    color: var(--text-dim);
+    text-align: center;
+  }
+
+  .ff-game.championship .ff-game-label {
+    color: var(--champ);
+  }
+
+  .ff-team {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border-radius: 5px;
+    margin: 3px 0;
+    font-size: 0.8rem;
+  }
+
+  .ff-team.winner {
+    background: var(--win-bg);
+    border: 1px solid rgba(22,163,74,0.15);
+  }
+
+  .ff-team.winner .team-name { font-weight: 700; color: var(--win); }
+  .ff-team.loser .team-name { color: var(--lose-text); }
+  .ff-team.loser .seed { opacity: 0.4; }
+
+  .ff-team .seed {
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
+  }
+
+  .ff-team .win-prob {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .ff-team.loser .win-prob { display: none; }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    color: var(--text-dim);
+    font-size: 0.75rem;
+    border-top: 1px solid var(--border);
+    margin-top: 1rem;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 1100px) {
+    .bracket-wrapper { flex-direction: column; align-items: center; }
+    .bracket-half { width: 100%; max-width: 900px; }
+    .final-four-section { max-width: 400px; min-width: auto; width: 100%; padding: 1rem 0; }
+    .ff-games { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+    .ff-game { min-width: 260px; }
+    .bracket-half.right .rounds { flex-direction: row !important; }
+    .dashboard { padding: 0.75rem; }
+    .dash-top { gap: 0.5rem; }
+    .stat-card { min-width: 80px; padding: 0.5rem; }
+    .dash-bottom { flex-direction: column; align-items: center; }
+    .dash-panel { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 style="font-size:1.8rem;font-weight:900;color:#111;margin:0">March Madness 2026</h1>
+</header>
+
+<div class="dashboard" id="dashboard">
+  <div class="dash-top">
+    <div class="stat-card accuracy-card">
+      <div class="stat-icon">&#x1F3AF;</div>
+      <div class="accuracy-ring" id="acc-ring">
+        <div class="accuracy-ring-inner" id="acc-pct">--</div>
+      </div>
+      <div class="stat-label">Accuracy</div>
+    </div>
+    <div class="stat-card correct-card">
+      <div class="stat-icon">&#x2705;</div>
+      <div class="stat-value" id="sc-correct">0</div>
+      <div class="stat-label">Correct</div>
+    </div>
+    <div class="stat-card wrong-card">
+      <div class="stat-icon">&#x274C;</div>
+      <div class="stat-value" id="sc-wrong">0</div>
+      <div class="stat-label">Wrong</div>
+    </div>
+    <div class="stat-card points-card">
+      <div class="stat-icon">&#x2B50;</div>
+      <div class="stat-value" id="sc-points">0</div>
+      <div class="stat-label">Points</div>
+      <div class="stat-sub" id="sc-upset-bonus-sub">+0 upset bonus</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">&#x23F3;</div>
+      <div class="stat-value" id="sc-pending">63</div>
+      <div class="stat-label">Remaining</div>
+      <div class="stat-sub" id="sc-scored-sub">0 / 63 scored</div>
+    </div>
+  </div>
+
+  <div class="round-progress" id="round-progress"></div>
+
+  <div class="dash-bottom">
+    <div class="dash-panel" id="upset-panel">
+      <div class="dash-panel-title">&#x1F525; Upset Tracker</div>
+      <div id="upset-rows"></div>
+    </div>
+    <div class="dash-panel" id="chalk-panel">
+      <div class="dash-panel-title">&#x1F4CA; My Bracket vs Chalk</div>
+      <div class="chalk-grid">
+        <div class="chalk-col agent">
+          <div class="chalk-value" id="chalk-agent">0</div>
+          <div class="chalk-label">My Bracket</div>
+        </div>
+        <div class="chalk-col chalk">
+          <div class="chalk-value" id="chalk-chalk">0</div>
+          <div class="chalk-label">All Chalk</div>
+        </div>
+      </div>
+      <div class="chalk-diff tied" id="chalk-diff">No games scored yet</div>
+    </div>
+  </div>
+
+  <button class="reset-btn" onclick="resetScores()">Reset All Scores</button>
+</div>
+
+<div class="champion-banner" id="champion-banner"></div>
+<div class="bracket-wrapper" id="bracket"></div>
+
+<footer>
+  Generated by <strong>Bracket Filler Agent</strong>
+</footer>
+
+<script>
+const BRACKET_DATA = __BRACKET_JSON__;
+const STORAGE_KEY = 'bracket_scores_2026';
+
+const TEAM_LOGOS = {
+  "Duke": "https://a.espncdn.com/i/teamlogos/ncaa/500/150.png",
+  "Michigan State": "https://a.espncdn.com/i/teamlogos/ncaa/500/127.png",
+  "Iowa State": "https://a.espncdn.com/i/teamlogos/ncaa/500/66.png",
+  "Texas Tech": "https://a.espncdn.com/i/teamlogos/ncaa/500/2641.png",
+  "Arkansas": "https://a.espncdn.com/i/teamlogos/ncaa/500/8.png",
+  "Tennessee": "https://a.espncdn.com/i/teamlogos/ncaa/500/2633.png",
+  "Villanova": "https://a.espncdn.com/i/teamlogos/ncaa/500/222.png",
+  "Georgia": "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png",
+  "Ohio State": "https://a.espncdn.com/i/teamlogos/ncaa/500/194.png",
+  "Miami OH": "https://a.espncdn.com/i/teamlogos/ncaa/500/193.png",
+  "Indiana": "https://a.espncdn.com/i/teamlogos/ncaa/500/84.png",
+  "South Florida": "https://a.espncdn.com/i/teamlogos/ncaa/500/58.png",
+  "Hofstra": "https://a.espncdn.com/i/teamlogos/ncaa/500/2275.png",
+  "North Dakota State": "https://a.espncdn.com/i/teamlogos/ncaa/500/2449.png",
+  "Wright State": "https://a.espncdn.com/i/teamlogos/ncaa/500/2750.png",
+  "Lehigh": "https://a.espncdn.com/i/teamlogos/ncaa/500/2329.png",
+  "Florida": "https://a.espncdn.com/i/teamlogos/ncaa/500/57.png",
+  "Houston": "https://a.espncdn.com/i/teamlogos/ncaa/500/248.png",
+  "Nebraska": "https://a.espncdn.com/i/teamlogos/ncaa/500/158.png",
+  "Virginia": "https://a.espncdn.com/i/teamlogos/ncaa/500/258.png",
+  "St. John's": "https://a.espncdn.com/i/teamlogos/ncaa/500/2599.png",
+  "Louisville": "https://a.espncdn.com/i/teamlogos/ncaa/500/97.png",
+  "Saint Mary's": "https://a.espncdn.com/i/teamlogos/ncaa/500/2608.png",
+  "Utah State": "https://a.espncdn.com/i/teamlogos/ncaa/500/328.png",
+  "Iowa": "https://a.espncdn.com/i/teamlogos/ncaa/500/2294.png",
+  "NC State": "https://a.espncdn.com/i/teamlogos/ncaa/500/152.png",
+  "Missouri": "https://a.espncdn.com/i/teamlogos/ncaa/500/142.png",
+  "High Point": "https://a.espncdn.com/i/teamlogos/ncaa/500/2272.png",
+  "Northern Iowa": "https://a.espncdn.com/i/teamlogos/ncaa/500/2460.png",
+  "UC Irvine": "https://a.espncdn.com/i/teamlogos/ncaa/500/300.png",
+  "Tennessee State": "https://a.espncdn.com/i/teamlogos/ncaa/500/2634.png",
+  "Furman": "https://a.espncdn.com/i/teamlogos/ncaa/500/231.png",
+  "Michigan": "https://a.espncdn.com/i/teamlogos/ncaa/500/130.png",
+  "UConn": "https://a.espncdn.com/i/teamlogos/ncaa/500/41.png",
+  "Purdue": "https://a.espncdn.com/i/teamlogos/ncaa/500/2509.png",
+  "Kansas": "https://a.espncdn.com/i/teamlogos/ncaa/500/2305.png",
+  "Vanderbilt": "https://a.espncdn.com/i/teamlogos/ncaa/500/238.png",
+  "North Carolina": "https://a.espncdn.com/i/teamlogos/ncaa/500/153.png",
+  "Kentucky": "https://a.espncdn.com/i/teamlogos/ncaa/500/96.png",
+  "Clemson": "https://a.espncdn.com/i/teamlogos/ncaa/500/228.png",
+  "TCU": "https://a.espncdn.com/i/teamlogos/ncaa/500/2628.png",
+  "UCF": "https://a.espncdn.com/i/teamlogos/ncaa/500/2116.png",
+  "Texas": "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png",
+  "Yale": "https://a.espncdn.com/i/teamlogos/ncaa/500/43.png",
+  "Stephen F. Austin": "https://a.espncdn.com/i/teamlogos/ncaa/500/2617.png",
+  "Merrimack": "https://a.espncdn.com/i/teamlogos/ncaa/500/2771.png",
+  "Queens": "https://a.espncdn.com/i/teamlogos/ncaa/500/234545.png",
+  "Howard": "https://a.espncdn.com/i/teamlogos/ncaa/500/47.png",
+  "Arizona": "https://a.espncdn.com/i/teamlogos/ncaa/500/12.png",
+  "Illinois": "https://a.espncdn.com/i/teamlogos/ncaa/500/356.png",
+  "Alabama": "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png",
+  "Gonzaga": "https://a.espncdn.com/i/teamlogos/ncaa/500/2250.png",
+  "Wisconsin": "https://a.espncdn.com/i/teamlogos/ncaa/500/275.png",
+  "BYU": "https://a.espncdn.com/i/teamlogos/ncaa/500/252.png",
+  "Miami FL": "https://a.espncdn.com/i/teamlogos/ncaa/500/2390.png",
+  "UCLA": "https://a.espncdn.com/i/teamlogos/ncaa/500/26.png",
+  "Texas A&M": "https://a.espncdn.com/i/teamlogos/ncaa/500/245.png",
+  "Saint Louis": "https://a.espncdn.com/i/teamlogos/ncaa/500/139.png",
+  "Santa Clara": "https://a.espncdn.com/i/teamlogos/ncaa/500/2541.png",
+  "Liberty": "https://a.espncdn.com/i/teamlogos/ncaa/500/2335.png",
+  "Utah Valley": "https://a.espncdn.com/i/teamlogos/ncaa/500/3084.png",
+  "Troy": "https://a.espncdn.com/i/teamlogos/ncaa/500/2653.png",
+  "Portland State": "https://a.espncdn.com/i/teamlogos/ncaa/500/2501.png",
+  "UMBC": "https://a.espncdn.com/i/teamlogos/ncaa/500/2692.png",
+  "Siena": "https://a.espncdn.com/i/teamlogos/ncaa/500/2547.png",
+  "Cal Baptist": "https://a.espncdn.com/i/teamlogos/ncaa/500/2856.png",
+  "Akron": "https://a.espncdn.com/i/teamlogos/ncaa/500/2006.png",
+  "SMU": "https://a.espncdn.com/i/teamlogos/ncaa/500/2567.png",
+  "VCU": "https://a.espncdn.com/i/teamlogos/ncaa/500/2670.png",
+  "McNeese": "https://a.espncdn.com/i/teamlogos/ncaa/500/2377.png",
+  "Pennsylvania": "https://a.espncdn.com/i/teamlogos/ncaa/500/219.png",
+  "Idaho": "https://a.espncdn.com/i/teamlogos/ncaa/500/70.png",
+  "Hawaii": "https://a.espncdn.com/i/teamlogos/ncaa/500/62.png",
+  "Kennesaw State": "https://a.espncdn.com/i/teamlogos/ncaa/500/338.png",
+  "LIU": "https://a.espncdn.com/i/teamlogos/ncaa/500/112607.png"
+};
+
+function logoImg(teamName, cssClass) {
+  const url = TEAM_LOGOS[teamName];
+  if (!url) return '';
+  return `<img class="team-logo ${cssClass || ''}" src="${url}" alt="" loading="lazy">`;
+}
+
+const ROUND_BASE = {
+  'round_64': 1, 'round_32': 2, 'sweet_16': 4,
+  'elite_eight': 8, 'final_four': 16, 'championship': 32
+};
+const UPSET_BONUS_PER_SEED = {
+  'round_64': 1.5, 'round_32': 2.5, 'sweet_16': 4,
+  'elite_eight': 6, 'final_four': 10, 'championship': 15
+};
+
+function pct(p) { return Math.round(p * 100) + '%'; }
+
+function loadScores() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+  catch { return {}; }
+}
+
+function resetScores() {
+  if (!confirm('Clear all entered scores?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  document.querySelectorAll('.score-input').forEach(el => { el.value = ''; el.classList.remove('has-value'); });
+  document.querySelectorAll('[data-game-id]').forEach(el => { el.classList.remove('scored-correct', 'scored-wrong'); });
+  updateScorecard();
+}
+
+const ROUND_LABELS = {
+  'round_64': 'R64', 'round_32': 'R32', 'sweet_16': 'S16',
+  'elite_eight': 'E8', 'final_four': 'FF', 'championship': 'Final'
+};
+const ROUND_TOTALS = {
+  'round_64': 32, 'round_32': 16, 'sweet_16': 8,
+  'elite_eight': 4, 'final_four': 2, 'championship': 1
+};
+
+function updateScorecard() {
+  const scores = loadScores();
+  let correct = 0, wrong = 0, points = 0, upsetBonus = 0, total = 0;
+  const roundStats = {};
+  for (const k of Object.keys(ROUND_LABELS)) roundStats[k] = { correct: 0, wrong: 0, total: 0 };
+
+  document.querySelectorAll('[data-game-id]').forEach(el => {
+    const gid = el.dataset.gameId;
+    const predicted = el.dataset.predictedWinner;
+    const roundKey = el.dataset.roundKey;
+    const seedA = parseInt(el.dataset.seedA) || 0;
+    const seedB = parseInt(el.dataset.seedB) || 0;
+    const s = scores[gid];
+    el.classList.remove('scored-correct', 'scored-wrong');
+    if (s && s.a !== '' && s.b !== '' && s.a != null && s.b != null) {
+      const scoreA = parseInt(s.a), scoreB = parseInt(s.b);
+      if (!isNaN(scoreA) && !isNaN(scoreB)) {
+        total++;
+        if (roundStats[roundKey]) roundStats[roundKey].total++;
+        const actualWinner = scoreA > scoreB ? el.dataset.teamA : el.dataset.teamB;
+        if (actualWinner === predicted) {
+          correct++;
+          if (roundStats[roundKey]) roundStats[roundKey].correct++;
+          const base = ROUND_BASE[roundKey] || 0;
+          const winnerSeed = actualWinner === el.dataset.teamA ? seedA : seedB;
+          const loserSeed = actualWinner === el.dataset.teamA ? seedB : seedA;
+          const seedDiff = winnerSeed > loserSeed ? winnerSeed - loserSeed : 0;
+          const bonus = seedDiff > 0 ? seedDiff * (UPSET_BONUS_PER_SEED[roundKey] || 0) : 0;
+          points += base + bonus;
+          upsetBonus += bonus;
+          el.classList.add('scored-correct');
+        } else {
+          wrong++;
+          if (roundStats[roundKey]) roundStats[roundKey].wrong++;
+          el.classList.add('scored-wrong');
+        }
+      }
+    }
+  });
+
+  document.getElementById('sc-correct').textContent = correct;
+  document.getElementById('sc-wrong').textContent = wrong;
+  document.getElementById('sc-points').textContent = Math.round(points * 10) / 10;
+  document.getElementById('sc-upset-bonus-sub').textContent = `+${Math.round(upsetBonus * 10) / 10} upset bonus`;
+  document.getElementById('sc-pending').textContent = 63 - total;
+  document.getElementById('sc-scored-sub').textContent = `${total} / 63 scored`;
+
+  const accPct = (correct + wrong) > 0 ? Math.round(correct / (correct + wrong) * 100) : 0;
+  document.getElementById('acc-pct').textContent = (correct + wrong) > 0 ? accPct + '%' : '--';
+  const deg = (correct + wrong) > 0 ? Math.round(correct / (correct + wrong) * 360) : 0;
+  document.getElementById('acc-ring').style.background =
+    `conic-gradient(var(--correct) 0deg, var(--correct) ${deg}deg, var(--wrong) ${deg}deg, var(--wrong) ${deg + Math.round(wrong / Math.max(correct + wrong, 1) * 360)}deg, var(--surface2) ${deg + Math.round(wrong / Math.max(correct + wrong, 1) * 360)}deg)`;
+
+  renderRoundProgress(roundStats);
+  renderUpsetTracker(scores);
+  renderChalkComparison(scores, points);
+}
+
+function renderRoundProgress(roundStats) {
+  const container = document.getElementById('round-progress');
+  let html = '';
+  for (const [key, label] of Object.entries(ROUND_LABELS)) {
+    const rs = roundStats[key];
+    const t = ROUND_TOTALS[key];
+    const pctC = t > 0 ? (rs.correct / t * 100) : 0;
+    const pctW = t > 0 ? (rs.wrong / t * 100) : 0;
+    html += `<div class="rp-segment">
+      <div class="rp-label">${label}</div>
+      <div class="rp-bar">
+        <div class="rp-fill-correct" style="width:${pctC}%"></div>
+        <div class="rp-fill-wrong" style="width:${pctW}%"></div>
+      </div>
+      <div class="rp-count">${rs.correct + rs.wrong} / ${t}</div>
+    </div>`;
+  }
+  container.innerHTML = html;
+}
+
+function renderUpsetTracker(scores) {
+  const container = document.getElementById('upset-rows');
+  let html = '';
+  document.querySelectorAll('[data-game-id]').forEach(el => {
+    const predicted = el.dataset.predictedWinner;
+    const seedA = parseInt(el.dataset.seedA) || 0;
+    const seedB = parseInt(el.dataset.seedB) || 0;
+    const predSeed = predicted === el.dataset.teamA ? seedA : seedB;
+    const oppSeed = predicted === el.dataset.teamA ? seedB : seedA;
+    if (predSeed <= oppSeed) return;
+
+    const gid = el.dataset.gameId;
+    const s = scores[gid];
+    let statusClass = 'pending', statusIcon = '?';
+    if (s && s.a !== '' && s.b !== '' && s.a != null && s.b != null) {
+      const sA = parseInt(s.a), sB = parseInt(s.b);
+      if (!isNaN(sA) && !isNaN(sB)) {
+        const actual = sA > sB ? el.dataset.teamA : el.dataset.teamB;
+        if (actual === predicted) { statusClass = 'hit'; statusIcon = '\u2713'; }
+        else { statusClass = 'miss'; statusIcon = '\u2717'; }
+      }
+    }
+    html += `<div class="upset-row">
+      <div class="upset-status ${statusClass}">${statusIcon}</div>
+      <span>[${predSeed}] ${predicted} over [${oppSeed}] ${predicted === el.dataset.teamA ? el.dataset.teamB : el.dataset.teamA}</span>
+    </div>`;
+  });
+  if (!html) html = '<div style="font-size:0.7rem;color:var(--text-dim)">No upset picks in this bracket</div>';
+  container.innerHTML = html;
+}
+
+function renderChalkComparison(scores, agentPoints) {
+  let chalkPts = 0;
+  document.querySelectorAll('[data-game-id]').forEach(el => {
+    const roundKey = el.dataset.roundKey;
+    const seedA = parseInt(el.dataset.seedA) || 0;
+    const seedB = parseInt(el.dataset.seedB) || 0;
+    const gid = el.dataset.gameId;
+    const s = scores[gid];
+    if (s && s.a !== '' && s.b !== '' && s.a != null && s.b != null) {
+      const sA = parseInt(s.a), sB = parseInt(s.b);
+      if (!isNaN(sA) && !isNaN(sB)) {
+        const actual = sA > sB ? el.dataset.teamA : el.dataset.teamB;
+        const actualSeed = actual === el.dataset.teamA ? seedA : seedB;
+        const chalkWinner = seedA <= seedB ? el.dataset.teamA : el.dataset.teamB;
+        if (actual === chalkWinner) {
+          const base = ROUND_BASE[roundKey] || 0;
+          const winnerSeed = actualSeed;
+          const loserSeed = actual === el.dataset.teamA ? seedB : seedA;
+          const seedDiff = winnerSeed > loserSeed ? winnerSeed - loserSeed : 0;
+          const bonus = seedDiff > 0 ? seedDiff * (UPSET_BONUS_PER_SEED[roundKey] || 0) : 0;
+          chalkPts += base + bonus;
+        }
+      }
+    }
+  });
+
+  const r = (v) => Math.round(v * 10) / 10;
+  document.getElementById('chalk-agent').textContent = r(agentPoints);
+  document.getElementById('chalk-chalk').textContent = r(chalkPts);
+
+  const diffEl = document.getElementById('chalk-diff');
+  const diff = agentPoints - chalkPts;
+  if (agentPoints === 0 && chalkPts === 0) {
+    diffEl.textContent = 'No games scored yet';
+    diffEl.className = 'chalk-diff tied';
+  } else if (diff > 0) {
+    diffEl.textContent = `+${r(diff)} pts ahead of chalk`;
+    diffEl.className = 'chalk-diff ahead';
+  } else if (diff < 0) {
+    diffEl.textContent = `${r(diff)} pts behind chalk`;
+    diffEl.className = 'chalk-diff behind';
+  } else {
+    diffEl.textContent = 'Tied with chalk';
+    diffEl.className = 'chalk-diff tied';
+  }
+}
+
+function onScoreInput(gameId, side, value) {
+  const scores = loadScores();
+  if (!scores[gameId]) scores[gameId] = { a: '', b: '' };
+  scores[gameId][side] = value;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(scores));
+  updateScorecard();
+}
+
+function renderChampion(data) {
+  const el = document.getElementById('champion-banner');
+  const c = data.championship;
+  el.innerHTML = `
+    <div class="trophy">🏆</div>
+    <div class="champ-name">${logoImg(c.winner, 'champ-logo')} ${c.winner} (${c.winner_seed} seed)</div>
+    <div class="champ-detail">Defeated ${c.loser} &mdash; Win probability: ${pct(c.win_prob)}</div>
+  `;
+}
+
+let gameCounter = 0;
+
+function gameCard(game, roundKey, regionName) {
+  const gid = `${regionName}_${roundKey}_${gameCounter++}`;
+  const aIsWinner = game.winner === game.team_a_name;
+  const predicted = game.winner;
+  const saved = loadScores()[gid] || {};
+  const valA = saved.a ?? '', valB = saved.b ?? '';
+
+  return `
+    <div class="game" data-game-id="${gid}" data-predicted-winner="${predicted}"
+         data-team-a="${game.team_a_name}" data-team-b="${game.team_b_name}"
+         data-seed-a="${game.team_a_seed}" data-seed-b="${game.team_b_seed}" data-round-key="${roundKey}">
+      <div class="game-team ${aIsWinner ? 'winner' : 'loser'}">
+        <span class="seed">${game.team_a_seed}</span>
+        <span class="team-name" title="${game.team_a_name}">${logoImg(game.team_a_name)}${game.team_a_name}</span>
+        ${aIsWinner ? `<span class="win-prob">${pct(game.win_prob)}</span>` : ''}
+        <input type="number" class="score-input ${valA !== '' ? 'has-value' : ''}" value="${valA}"
+               min="0" max="200" placeholder="–"
+               oninput="this.classList.toggle('has-value', this.value !== ''); onScoreInput('${gid}','a',this.value)">
+      </div>
+      <div class="game-team ${!aIsWinner ? 'winner' : 'loser'}">
+        <span class="seed">${game.team_b_seed}</span>
+        <span class="team-name" title="${game.team_b_name}">${logoImg(game.team_b_name)}${game.team_b_name}</span>
+        ${!aIsWinner ? `<span class="win-prob">${pct(1 - game.win_prob)}</span>` : ''}
+        <input type="number" class="score-input ${valB !== '' ? 'has-value' : ''}" value="${valB}"
+               min="0" max="200" placeholder="–"
+               oninput="this.classList.toggle('has-value', this.value !== ''); onScoreInput('${gid}','b',this.value)">
+      </div>
+    </div>
+  `;
+}
+
+function renderBracket(data) {
+  const wrapper = document.getElementById('bracket');
+  const regionNames = Object.keys(data.regions);
+
+  const leftHalf = document.createElement('div');
+  leftHalf.className = 'bracket-half left';
+  for (const rName of regionNames.slice(0, 2)) {
+    leftHalf.appendChild(buildRegion(rName, data.regions[rName]));
+  }
+  wrapper.appendChild(leftHalf);
+
+  wrapper.appendChild(buildFinalFour(data));
+
+  const rightHalf = document.createElement('div');
+  rightHalf.className = 'bracket-half right';
+  for (const rName of regionNames.slice(2, 4)) {
+    rightHalf.appendChild(buildRegion(rName, data.regions[rName]));
+  }
+  wrapper.appendChild(rightHalf);
+}
+
+function buildRegion(name, regionData) {
+  const region = document.createElement('div');
+  region.className = 'region';
+  region.innerHTML = `<div class="region-header">${name}</div>`;
+
+  const rounds = document.createElement('div');
+  rounds.className = 'rounds';
+
+  const roundKeys = ['round_64', 'round_32', 'sweet_16', 'elite_eight'];
+  const roundLabels = ['Round of 64', 'Round of 32', 'Sweet 16', 'Elite Eight'];
+  const roundClasses = ['r64', 'r32', 's16', 'e8'];
+
+  for (let i = 0; i < roundKeys.length; i++) {
+    const games = regionData[roundKeys[i]] || [];
+    const col = document.createElement('div');
+    col.className = 'round';
+    col.innerHTML = `<div class="round-label ${roundClasses[i]}">${roundLabels[i]}</div>`;
+    for (const g of games) col.innerHTML += gameCard(g, roundKeys[i], name);
+    rounds.appendChild(col);
+  }
+
+  region.appendChild(rounds);
+  return region;
+}
+
+function ffTeamHtml(name, seed, isWinner, prob, gid, side) {
+  const saved = loadScores()[gid] || {};
+  const val = saved[side] ?? '';
+  return `
+    <div class="ff-team ${isWinner ? 'winner' : 'loser'}">
+      <span class="seed">${seed}</span>
+      <span class="team-name">${logoImg(name)}${name}</span>
+      <span class="win-prob">${isWinner ? pct(prob) : ''}</span>
+      <input type="number" class="score-input ${val !== '' ? 'has-value' : ''}" value="${val}"
+             min="0" max="200" placeholder="–"
+             oninput="this.classList.toggle('has-value', this.value !== ''); onScoreInput('${gid}','${side}',this.value)">
+    </div>
+  `;
+}
+
+function buildFinalFour(data) {
+  const section = document.createElement('div');
+  section.className = 'final-four-section';
+
+  let html = `
+    <img class="ff-logo" src="https://www.ncaa.com/_flysystem/public-s3/2024-12/2026-mens-final-four-logo.jpg"
+         alt="Final Four 2026" onerror="this.style.display='none'">
+    <div class="ff-dates">Final Four: Apr 4 &bull; Championship: Apr 6</div>
+    <div class="ff-games">
+  `;
+
+
+  data.final_four.forEach((g, idx) => {
+    const gid = `ff_semifinal_${gameCounter++}`;
+    const wIsA = g.winner === g.team_a_name;
+    html += `
+      <div class="ff-game" data-game-id="${gid}" data-predicted-winner="${g.winner}"
+           data-team-a="${g.team_a_name}" data-team-b="${g.team_b_name}"
+           data-seed-a="${g.team_a_seed}" data-seed-b="${g.team_b_seed}" data-round-key="final_four">
+        <div class="ff-game-label">Semifinal ${idx + 1}</div>
+        ${ffTeamHtml(g.team_a_name, g.team_a_seed, wIsA, g.win_prob, gid, 'a')}
+        ${ffTeamHtml(g.team_b_name, g.team_b_seed, !wIsA, 1 - g.win_prob, gid, 'b')}
+      </div>
+    `;
+  });
+
+  const c = data.championship;
+  const cgid = `ff_championship_${gameCounter++}`;
+  const cwIsA = c.winner === c.team_a_name;
+  html += `
+    <div class="ff-game championship" data-game-id="${cgid}" data-predicted-winner="${c.winner}"
+         data-team-a="${c.team_a_name}" data-team-b="${c.team_b_name}"
+         data-seed-a="${c.team_a_seed}" data-seed-b="${c.team_b_seed}" data-round-key="championship">
+      <div class="ff-game-label">🏆 Championship</div>
+      ${ffTeamHtml(c.team_a_name, c.team_a_seed, cwIsA, c.win_prob, cgid, 'a')}
+      ${ffTeamHtml(c.team_b_name, c.team_b_seed, !cwIsA, 1 - c.win_prob, cgid, 'b')}
+    </div>
+  `;
+
+  html += `</div>`;
+  html += `
+    <img class="mm-logo-bottom" src="https://loodibee.com/wp-content/uploads/NCAA-March-Madness-logo.png"
+         alt="March Madness" onerror="this.style.display='none'">
+  `;
+  section.innerHTML = html;
+  return section;
+}
+
+renderChampion(BRACKET_DATA);
+renderBracket(BRACKET_DATA);
+updateScorecard();
+
+(function autoLoadScores() {
+  fetch('scores.json')
+    .then(r => r.ok ? r.json() : {})
+    .then(auto => {
+      if (!auto || !Object.keys(auto).length) return;
+      const manual = loadScores();
+      let merged = {...manual};
+      let changed = false;
+      for (const [gid, val] of Object.entries(auto)) {
+        if (!merged[gid] || (merged[gid].a === '' && merged[gid].b === '')) {
+          merged[gid] = val;
+          changed = true;
+        }
+      }
+      if (!changed) return;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+      for (const [gid, val] of Object.entries(merged)) {
+        const el = document.querySelector(`[data-game-id="${gid}"]`);
+        if (!el) continue;
+        const inputs = el.querySelectorAll('.score-input');
+        if (inputs[0] && val.a !== '') { inputs[0].value = val.a; inputs[0].classList.add('has-value'); }
+        if (inputs[1] && val.b !== '') { inputs[1].value = val.b; inputs[1].classList.add('has-value'); }
+      }
+      updateScorecard();
+    })
+    .catch(() => {});
+})();
+</script>
+</body>
+</html>

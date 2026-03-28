@@ -1,0 +1,10 @@
+.DS_Store
+__pycache__/
+*.pyc
+.cursor/
+
+# Timestamped bracket outputs (keep index.html and bracket.json as stable references)
+bracket_*_*.html
+bracket_*_*.json
+bracket_*_*.txt
+bracket_*_*.md
