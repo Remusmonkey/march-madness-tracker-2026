@@ -1234,7 +1234,7 @@ renderBracket(BRACKET_DATA);
 updateScorecard();
 
 (function autoLoadScores() {
-  fetch('scores.json')
+  fetch('scores.json?t=' + Date.now())
     .then(r => r.ok ? r.json() : {})
     .then(data => {
       if (!data) return;
