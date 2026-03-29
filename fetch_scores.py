@@ -28,7 +28,7 @@ TOURNAMENT_END = date(2026, 4, 7)
 NAME_ALIASES = {
     "UConn": ["connecticut", "uconn"],
     "St. John's": ["st. john's", "st john's"],
-    "Miami FL": ["miami", "miami (fl)"],
+    "Miami FL": ["miami (fl)", "miami fl", "miami hurricanes", "mia"],
     "NC State": ["nc state", "north carolina state"],
     "Cal Baptist": ["california baptist", "cal baptist"],
     "UCF": ["ucf", "central florida"],
@@ -48,6 +48,18 @@ NAME_ALIASES = {
     "Saint Louis": ["saint louis", "st. louis"],
     "Texas A&M": ["texas a&m", "texas a&m aggies"],
     "Iowa State": ["iowa state"],
+    "Miami (OH)": ["miami (oh)", "miami oh", "miami redhawks", "m-oh"],
+    "Prairie View A&M": ["prairie view a&m", "prairie view"],
+    "Howard": ["howard"],
+    "Texas": ["texas longhorns", "tex"],
+}
+
+# First Four play-in losers -> the teams that replaced them in R64
+FIRST_FOUR_SUBS = {
+    "Lehigh": "Prairie View A&M",
+    "UMBC": "Howard",
+    "SMU": "Miami (OH)",
+    "NC State": "Texas",
 }
 
 
@@ -138,12 +150,36 @@ def fetch_espn_results():
     return results
 
 
+EXACT_ONLY = {"miami fl", "miami (fl)", "miami (oh)", "miami oh",
+               "texas longhorns", "texas"}
+
 def name_matches(aliases, candidate):
     candidate_norm = normalize(candidate)
     for alias in aliases:
-        if alias == candidate_norm or alias in candidate_norm or candidate_norm in alias:
+        if alias == candidate_norm:
+            return True
+        if alias in EXACT_ONLY or candidate_norm in EXACT_ONLY:
+            continue
+        if alias in candidate_norm or candidate_norm in alias:
             return True
     return False
+
+
+def _check_pair(a_aliases, b_aliases, result):
+    """Check if a and b match a given ESPN result. Returns score dict or None."""
+    name0, name1 = result[0]["name"], result[1]["name"]
+    abbr0, abbr1 = result[0].get("abbrev", ""), result[1].get("abbrev", "")
+
+    a_in_0 = name_matches(a_aliases, name0) or name_matches(a_aliases, abbr0)
+    a_in_1 = name_matches(a_aliases, name1) or name_matches(a_aliases, abbr1)
+    b_in_0 = name_matches(b_aliases, name0) or name_matches(b_aliases, abbr0)
+    b_in_1 = name_matches(b_aliases, name1) or name_matches(b_aliases, abbr1)
+
+    if a_in_0 and b_in_1:
+        return {"a": str(result[0]["score"]), "b": str(result[1]["score"])}
+    if a_in_1 and b_in_0:
+        return {"a": str(result[1]["score"]), "b": str(result[0]["score"])}
+    return None
 
 
 def match_game(bracket_game, espn_results):
@@ -151,22 +187,38 @@ def match_game(bracket_game, espn_results):
     b_aliases = get_aliases(bracket_game["team_b"])
 
     for result in espn_results:
-        name0 = result[0]["name"]
-        name1 = result[1]["name"]
-        abbr0 = result[0].get("abbrev", "")
-        abbr1 = result[1].get("abbrev", "")
+        m = _check_pair(a_aliases, b_aliases, result)
+        if m:
+            return m
 
-        a_in_0 = name_matches(a_aliases, name0) or name_matches(a_aliases, abbr0)
-        a_in_1 = name_matches(a_aliases, name1) or name_matches(a_aliases, abbr1)
-        b_in_0 = name_matches(b_aliases, name0) or name_matches(b_aliases, abbr0)
-        b_in_1 = name_matches(b_aliases, name1) or name_matches(b_aliases, abbr1)
+    # Retry with First Four substitutions (play-in losers replaced by winners)
+    sub_a = FIRST_FOUR_SUBS.get(bracket_game["team_a"])
+    sub_b = FIRST_FOUR_SUBS.get(bracket_game["team_b"])
+    subs_to_try = []
+    if sub_b:
+        subs_to_try.append((a_aliases, get_aliases(sub_b)))
+    if sub_a:
+        subs_to_try.append((get_aliases(sub_a), b_aliases))
+    if sub_a and sub_b:
+        subs_to_try.append((get_aliases(sub_a), get_aliases(sub_b)))
 
-        if (a_in_0 and b_in_1):
-            return {"a": str(result[0]["score"]), "b": str(result[1]["score"])}
-        if (a_in_1 and b_in_0):
-            return {"a": str(result[1]["score"]), "b": str(result[0]["score"])}
+    for alt_a, alt_b in subs_to_try:
+        for result in espn_results:
+            m = _check_pair(alt_a, alt_b, result)
+            if m:
+                return m
 
     return None
+
+
+ROUND_DATES = {
+    "round_64": date(2026, 3, 20),
+    "round_32": date(2026, 3, 22),
+    "sweet_16": date(2026, 3, 28),
+    "elite_eight": date(2026, 3, 30),
+    "final_four": date(2026, 4, 4),
+    "championship": date(2026, 4, 6),
+}
 
 
 def main():
@@ -189,10 +241,26 @@ def main():
             print(f"  Matched: {game['team_a']} vs {game['team_b']} -> "
                   f"{result['a']}-{result['b']}")
 
+    today = date.today()
+    did_not_occur = []
+    for game in game_map:
+        if game["id"] in scores:
+            continue
+        gid = game["id"]
+        round_key = None
+        for rk in ROUND_DATES:
+            if rk in gid:
+                round_key = rk
+                break
+        if round_key and today > ROUND_DATES[round_key]:
+            did_not_occur.append(gid)
+            print(f"  Did not occur: {game['team_a']} vs {game['team_b']}")
+
+    output = {"scores": scores, "did_not_occur": did_not_occur}
     scores_path = os.path.join(script_dir, SCORES_JSON)
     with open(scores_path, "w") as f:
-        json.dump(scores, f, indent=2)
-    print(f"\nWrote {len(scores)} scores to {SCORES_JSON}")
+        json.dump(output, f, indent=2)
+    print(f"\nWrote {len(scores)} scores + {len(did_not_occur)} cancelled to {SCORES_JSON}")
 
 
 if __name__ == "__main__":

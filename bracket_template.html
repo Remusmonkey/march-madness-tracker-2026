@@ -441,6 +441,48 @@
     background: var(--wrong-bg);
   }
 
+  .game.did-not-occur {
+    opacity: 0.45;
+    border-color: var(--wrong);
+    background: repeating-linear-gradient(
+      -45deg, transparent, transparent 4px, rgba(220,38,38,0.04) 4px, rgba(220,38,38,0.04) 8px
+    );
+    position: relative;
+  }
+  .game.did-not-occur::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 4px;
+    right: 4px;
+    height: 2px;
+    background: var(--wrong);
+    border-radius: 1px;
+  }
+  .game.did-not-occur .score-input { display: none; }
+  .game.did-not-occur .win-prob { display: none; }
+
+  .ff-game.did-not-occur {
+    opacity: 0.45;
+    border-color: var(--wrong);
+    background: repeating-linear-gradient(
+      -45deg, transparent, transparent 4px, rgba(220,38,38,0.04) 4px, rgba(220,38,38,0.04) 8px
+    );
+    position: relative;
+  }
+  .ff-game.did-not-occur::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 8px;
+    right: 8px;
+    height: 2px;
+    background: var(--wrong);
+    border-radius: 1px;
+  }
+  .ff-game.did-not-occur .score-input { display: none; }
+  .ff-game.did-not-occur .win-prob { display: none; }
+
   .game-team {
     display: flex;
     align-items: center;
@@ -1194,25 +1236,36 @@ updateScorecard();
 (function autoLoadScores() {
   fetch('scores.json')
     .then(r => r.ok ? r.json() : {})
-    .then(auto => {
-      if (!auto || !Object.keys(auto).length) return;
-      const manual = loadScores();
-      let merged = {...manual};
-      let changed = false;
-      for (const [gid, val] of Object.entries(auto)) {
-        if (!merged[gid] || (merged[gid].a === '' && merged[gid].b === '')) {
-          merged[gid] = val;
-          changed = true;
-        }
-      }
-      if (!changed) return;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-      for (const [gid, val] of Object.entries(merged)) {
+    .then(data => {
+      if (!data) return;
+      const auto = data.scores || data;
+      const cancelled = data.did_not_occur || [];
+
+      cancelled.forEach(gid => {
         const el = document.querySelector(`[data-game-id="${gid}"]`);
-        if (!el) continue;
-        const inputs = el.querySelectorAll('.score-input');
-        if (inputs[0] && val.a !== '') { inputs[0].value = val.a; inputs[0].classList.add('has-value'); }
-        if (inputs[1] && val.b !== '') { inputs[1].value = val.b; inputs[1].classList.add('has-value'); }
+        if (el) el.classList.add('did-not-occur');
+      });
+
+      if (auto && Object.keys(auto).length) {
+        const manual = loadScores();
+        let merged = {...manual};
+        let changed = false;
+        for (const [gid, val] of Object.entries(auto)) {
+          if (!merged[gid] || (merged[gid].a === '' && merged[gid].b === '')) {
+            merged[gid] = val;
+            changed = true;
+          }
+        }
+        if (changed) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          for (const [gid, val] of Object.entries(merged)) {
+            const el = document.querySelector(`[data-game-id="${gid}"]`);
+            if (!el) continue;
+            const inputs = el.querySelectorAll('.score-input');
+            if (inputs[0] && val.a !== '') { inputs[0].value = val.a; inputs[0].classList.add('has-value'); }
+            if (inputs[1] && val.b !== '') { inputs[1].value = val.b; inputs[1].classList.add('has-value'); }
+          }
+        }
       }
       updateScorecard();
     })
