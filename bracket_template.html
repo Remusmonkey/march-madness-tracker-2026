@@ -1247,24 +1247,13 @@ updateScorecard();
       });
 
       if (auto && Object.keys(auto).length) {
-        const manual = loadScores();
-        let merged = {...manual};
-        let changed = false;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(auto));
         for (const [gid, val] of Object.entries(auto)) {
-          if (!merged[gid] || (merged[gid].a === '' && merged[gid].b === '')) {
-            merged[gid] = val;
-            changed = true;
-          }
-        }
-        if (changed) {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-          for (const [gid, val] of Object.entries(merged)) {
-            const el = document.querySelector(`[data-game-id="${gid}"]`);
-            if (!el) continue;
-            const inputs = el.querySelectorAll('.score-input');
-            if (inputs[0] && val.a !== '') { inputs[0].value = val.a; inputs[0].classList.add('has-value'); }
-            if (inputs[1] && val.b !== '') { inputs[1].value = val.b; inputs[1].classList.add('has-value'); }
-          }
+          const el = document.querySelector(`[data-game-id="${gid}"]`);
+          if (!el) continue;
+          const inputs = el.querySelectorAll('.score-input');
+          if (inputs[0] && val.a !== '') { inputs[0].value = val.a; inputs[0].classList.add('has-value'); }
+          if (inputs[1] && val.b !== '') { inputs[1].value = val.b; inputs[1].classList.add('has-value'); }
         }
       }
       updateScorecard();
