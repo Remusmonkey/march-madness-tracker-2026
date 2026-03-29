@@ -196,8 +196,11 @@
   "did_not_occur": [
     "East_round_32_8",
     "South_round_32_26",
+    "South_sweet_16_27",
     "Midwest_round_32_41",
     "Midwest_round_32_44",
-    "West_round_32_57"
+    "Midwest_sweet_16_46",
+    "West_round_32_57",
+    "West_sweet_16_61"
   ]
 }
