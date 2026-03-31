@@ -199,11 +199,14 @@
   },
   "did_not_occur": [
     "East_round_32_8",
+    "East_elite_eight_14",
     "South_round_32_26",
     "South_sweet_16_27",
+    "South_elite_eight_29",
     "Midwest_round_32_41",
     "Midwest_round_32_44",
     "Midwest_sweet_16_46",
+    "Midwest_elite_eight_47",
     "West_round_32_57",
     "West_sweet_16_61"
   ]
